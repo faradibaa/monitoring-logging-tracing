@@ -1,0 +1,33 @@
+# receive data from instrumented apps
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+
+# send data to Tempo
+exporters:
+  debug:
+    verbosity: detailed
+  otlp/tempo-grpc:
+    endpoint: <tempo-host-ip>:4317 # host running Tempo
+    tls:
+      insecure: true
+  otlphttp/tempo-http:
+    endpoint: http://<tempo-host-ip>:4318
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [debug, otlphttp/tempo-http, otlp/tempo-grpc]
+  telemetry: # instrumenting itself for troubleshooting purpose
+    traces:
+      processors:
+        batch:
+          exporter:
+            otlp:
+              protocol: grpc/protobuf
+              endpoint: localhost:4317
